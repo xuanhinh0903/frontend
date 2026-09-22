@@ -1,0 +1,93 @@
+# msvn
+
+Front-end base for a stock-market product: a React 19 + TypeScript + Vite single-page app with React Router, Redux Toolkit, and Redux Saga. The real backend is external (`VITE_API_URL`, see `.env.example`). Local mock is required and uses MSW in the browser (`VITE_API_MOCK=true`, handlers in `src/mocks/`) — there is no separate Node mock server. Unconfirmed backend contracts are listed in `README.md`; MSW handlers are the executable contract for dev, integration, and E2E.
+
+This file is the entry point for coding agents. Claude Code loads it directly; Cursor gets a generated copy (see Agent config).
+
+## Must-know rules
+
+- Reuse before adding. Search `src/shared/` and the feature you touch for an existing component, hook, util, or saga helper. `src/features/auth` is the reference feature.
+- Keep the change to what the task needs. Do not edit unrelated files, dependencies, or `yarn.lock` unless the task requires it.
+- Imports use the `@/` alias only (no `./` or `../`), and go through a folder's `index.ts` from outside that folder.
+- `.tsx` is only for files that render UI. Route config is `.ts` and passes `Component`, not `element: <X />`.
+- No helper functions in `.tsx`; no inline functions as object property values or JSX props.
+- API calls go through Redux Saga with `callApi`; components and sagas never call `fetch`. Endpoint URLs live only in `API_ENDPOINTS`.
+- Every new or changed endpoint also gets an MSW handler in `src/mocks/handlers/` and a row in the `README.md` contract table. Do not invent a separate mock server.
+- Do not hand-edit generated output: `dist/` and `coverage/`. Change `yarn.lock` only through `yarn`.
+
+Full rules and examples: `.claude/rules/conventions.md`.
+
+## Commands
+
+Package manager: Yarn 1 (`packageManager: yarn@1.22.22`), Node 24 (`.nvmrc`).
+
+| Task                       | Command                                                          |
+| -------------------------- | ---------------------------------------------------------------- |
+| Install                    | `yarn install`                                                   |
+| Dev server                 | `yarn dev`                                                       |
+| Lint                       | `yarn lint`                                                      |
+| Typecheck + build          | `yarn build` (runs `tsc -b && vite build`)                       |
+| Lint + agents sync + build | `yarn run check` (lint + `agents:check` + `tsc -b` + Vite build) |
+| Sync agent config          | `yarn agents:sync` / `yarn agents:check`                         |
+| Test (unit + component)    | `yarn test`                                                      |
+| Test with coverage         | `yarn test:coverage`                                             |
+| E2E (Playwright)           | `yarn test:e2e` (build mode `e2e` with MSW on)                   |
+| Dev with MSW mock          | `VITE_API_MOCK=true yarn dev`                                    |
+| Format                     | `yarn format` / `yarn format:check`                              |
+
+There is no separate typecheck script; `tsc -b` runs inside `yarn build`. Prefer MSW for local UI work when the real backend is unavailable.
+
+## Rules and skills
+
+| Kind  | File                            | Loaded                                                                                                |
+| ----- | ------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Rule  | `.claude/rules/architecture.md` | When working on files in `src/`. Read before touching routing, the store, sagas, auth, or HTTP client |
+| Rule  | `.claude/rules/conventions.md`  | When working on files in `src/`. Read before writing or reviewing any code                            |
+| Rule  | `.claude/rules/testing.md`      | When working on files in `src/` or `e2e/`. Which layer tests what, and the helpers in `@/test`        |
+| Rule  | `.claude/rules/react.md`        | When working on components and hooks. State, effects, rendering and hot-path performance              |
+| Rule  | `.claude/rules/ui.md`           | When working on `.tsx` or `.css`. Tokens, BEM, where CSS lives, market-data display, a11y floor       |
+| Skill | `implement-feature`             | When implementing a feature, fix, or refactor                                                         |
+| Skill | `review-code`                   | When asked to review a change, and before any push                                                    |
+| Skill | `core-typescript`               | When writing, fixing, or reviewing ordinary TypeScript                                                |
+| Skill | `typescript-advanced-types`     | When a task needs generics, conditional or mapped types, or complex inference                         |
+| Skill | `vercel-composition-patterns`   | When designing a component API: compound components, too many boolean props, context providers        |
+| Skill | `agent-browser`                 | When you need to drive the running app in a browser to check a change by hand                         |
+
+This is the whole skill set, and it is the same in Claude Code and Cursor. UI design and React performance are repo rules (`ui.md`, `react.md`), not skills, so both tools apply them the same way. Skills never override this file or `.claude/rules/*`.
+
+### TypeScript skills
+
+- Prefer the simplest type that works and the conventions already in the repo. Reach for advanced types only when a simple one cannot express the constraint.
+- Never use `any`, `@ts-ignore`, `@ts-expect-error` or an `as` cast just to silence an error; fix the type.
+- After any TypeScript change, run `yarn run check` (it runs `tsc -b`; there is no separate typecheck script).
+- Where the skills disagree with this repo, the repo wins:
+  - `ApiError` is a plain object on purpose (it travels through Redux); throwing it is allowed. Do not convert it to an `Error` subclass.
+  - `exactOptionalPropertyTypes` stays off. Do not enable it.
+  - Do not copy `core-typescript/assets/` (`tsconfig.base.json`, `eslint.config.js`) over the repo config or switch to `strictTypeChecked`.
+  - `switch-exhaustiveness-check` already enforces exhaustive `switch`; `assertNever` is optional.
+  - Use `type` aliases for object shapes, as the repo does, not `interface`.
+  - `null` is the empty value in Redux state, storage and API payloads (they must stay JSON-serializable). Do not switch them to `undefined`.
+
+## Verify and report
+
+For code changes, run `yarn run check` and `yarn test` (unit, component and integration), and add or update tests at the layer `.claude/rules/testing.md` assigns. Run `yarn test:e2e` when routing, auth or a smoke-tested flow changed. For Markdown-only changes, check links, paths, and `yarn format:check` instead. Report what you ran and the result, anything left unverified, and any unimplemented backend contract or performance risk. Do not commit, push, or publish unless asked.
+
+## Conflicts
+
+**Precedence (hard):** `CLAUDE.md` and `.claude/rules/*` (architecture, conventions, testing, react, ui) win over every third-party skill. Skills are on-demand only; they must not change this repo's import style, data flow (Saga + `callApi`), routing, or mock contract (MSW).
+
+Ignore third-party advice that conflicts with this stack, including “avoid barrel imports” applied to in-repo `index.ts` barrels, fetching data in components or with SWR / React Query, and replacing Redux Saga with Axios / Zustand / RTK Query.
+
+Scoped instructions (a nested `CLAUDE.md`, a rule for specific files) add to these rules within their scope. If two **repo** instructions contradict each other on something important and you cannot resolve it, say so in your report instead of picking silently. These rules do not override the user's explicit request, higher-priority system instructions, or a tool's own loading mechanism.
+
+## Agent config
+
+`.claude/` is the source for agent instructions; `.cursor/` is generated from it. Never edit `.cursor/rules/` or `.cursor/skills/` by hand.
+
+- **Generated copies.** `yarn agents:sync` writes `CLAUDE.md` to `.cursor/rules/project.mdc`, each `.claude/rules/<name>.md` to `.cursor/rules/<name>.mdc` (`paths` becomes `globs`), and copies every skill to `.cursor/skills/`. `yarn run check` fails when the two sides drift.
+- **Add a rule.** Create `.claude/rules/<name>.md` with a `description` and, for a scoped rule, `paths` globs. A rule without `paths` always applies. Then run `yarn agents:sync`.
+- **Add a skill.** Run `npx skills add <owner/repo> --skill <name> -a claude-code --copy -y`, or create `.claude/skills/<name>/SKILL.md` with `name` and `description`. Then run `yarn agents:sync`. `skills-lock.json` records the source of skills installed by the CLI.
+- **No `AGENTS.md` in skills.** Cursor always-applies that filename. Keep compiled third-party guides as `REFERENCE.md` (see `scripts/sync-agents.mjs`); `yarn agents:check` fails if `AGENTS.md` reappears.
+- **Parity.** Both tools must get the same skills and use them the same way, so the same request gives the same kind of result. `yarn agents:check` fails when a `SKILL.md` uses frontmatter only one tool reads (anything but `name`, `description`, `license`, `metadata`, `version`, `compatibility`) or names a tool one agent lacks (`WebFetch`, `WebSearch`, `AskUserQuestion`, `TodoWrite`). Do not install skills that ship a different build per tool. If a third-party skill fails the check, edit it locally (as done for `agent-browser` and `vercel-composition-patterns`) or do not use it.
+- **Runtimes.** `agent-browser` needs `npm i -g agent-browser` and `agent-browser install`.
+- Only `rules/` and `skills/` are committed. Personal settings in `.claude/` and `.cursor/` stay local. Keep secrets and machine-specific paths out of these files.

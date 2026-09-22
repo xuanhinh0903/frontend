@@ -1,0 +1,38 @@
+---
+description: UI and styling rules: design tokens, BEM class names, where CSS lives, number display for market data, accessibility floor.
+paths:
+  - "src/**/*.tsx"
+  - "src/**/*.css"
+---
+
+# UI rules
+
+A trading app needs consistent, dense and predictable screens. Follow the existing look; do not invent a new visual style per screen. Do not add a UI or CSS library (Tailwind, MUI, styled-components…) without asking.
+
+## Tokens
+
+- Colours, spacing, font, radius and shadow come only from the CSS variables in `src/shared/styles/tokens.css` (`var(--color-text)`, `var(--space-4)`, `var(--radius)`…). No hex, `rgb()` or raw `px` spacing in component CSS.
+- A missing value becomes a new token in `tokens.css`, with both the light value and the `prefers-color-scheme: dark` value.
+- Price direction uses `--color-positive` (up) and `--color-negative` (down). Ceiling, floor and reference colours do not exist yet: add them as tokens with the first price board.
+
+## Class names and CSS files
+
+- Class names follow BEM: `block`, `block__element`, `block__element--modifier` (`.app-nav__link--active`). The block is the component name in kebab-case (`LoginForm` → `.login-form`).
+- App shell and global styles live in `src/index.css`. A component's styles live in `<Component>.css` next to it, imported with the alias: `import '@/features/auth/components/LoginForm.css'`. `package.json` keeps `*.css` in `sideEffects`, so these imports survive tree-shaking. (The `.page-shell` and `.login-form` rules still sit in `src/index.css`; move a component's block into its own file when you change that component.)
+- No `style={{ … }}` except for values computed at runtime (a width from data, a position). Toggle a modifier class for state instead.
+
+## Market data display
+
+- Prices, volumes and other columns of numbers use `font-variant-numeric: tabular-nums` and are right-aligned in tables.
+- Never show direction by colour alone: pair the colour with a sign or arrow (`+1.25`, `▲`, `▼`).
+- Format numbers, money and dates with a shared formatter (`Intl.NumberFormat` / `Intl.DateTimeFormat` behind a util in `shared/utils`), never ad-hoc `toFixed` in components. Market time is `Asia/Ho_Chi_Minh`.
+
+## Accessibility floor
+
+E2E runs axe on the login and home pages (`e2e/a11y.spec.ts`); serious or critical violations fail CI. Add a page there when it becomes a smoke flow.
+
+- Every input has a visible `<label>`. Use native elements (`<button>`, `<a>`, `<table>`) before ARIA roles.
+- Form and request errors render with `role="alert"`; loading and empty states render visible text.
+- Keyboard focus is always visible. Do not remove `outline` without a replacement.
+- Respect `prefers-reduced-motion`; flashing price updates must not be the only signal of change.
+- Pages have one `<h1>` (`PageShell` renders it) and landmarks from the layouts (`<header>`, `<nav>`, `<main>`).

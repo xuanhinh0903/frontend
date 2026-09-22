@@ -1,0 +1,69 @@
+{
+  "name": "msvn",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=24"
+  },
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "build:e2e": "vite build --mode e2e --outDir dist-e2e",
+    "lint": "eslint .",
+    "check": "yarn lint && yarn agents:check && yarn build",
+    "agents:sync": "node scripts/sync-agents.mjs --write",
+    "agents:check": "node scripts/sync-agents.mjs --check",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "preview": "vite preview",
+    "preview:e2e": "vite preview --outDir dist-e2e --port 4173 --strictPort"
+  },
+  "dependencies": {
+    "@reduxjs/toolkit": "2.12.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-redux": "9.3.0",
+    "react-router": "8.4.0",
+    "redux": "5.0.1",
+    "redux-saga": "1.5.1"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.0",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.8",
+    "@types/node": "26.6.2",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "@vitejs/plugin-react": "6.1.1",
+    "@vitest/coverage-v8": "5.0.2",
+    "@vitest/eslint-plugin": "1.6.28",
+    "eslint": "10.10.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-jest-dom": "5.10.1",
+    "eslint-plugin-playwright": "2.12.2",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.6",
+    "eslint-plugin-testing-library": "7.16.2",
+    "globals": "17.12.0",
+    "jsdom": "31.0.0",
+    "msw": "3.0.4",
+    "prettier": "3.9.8",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "8.69.0",
+    "vite": "8.3.0",
+    "vitest": "5.0.2"
+  }
+}

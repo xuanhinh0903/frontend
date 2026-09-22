@@ -1,0 +1,66 @@
+---
+description: Test strategy: which layer tests what, with which tool, and the helpers to reuse. Vitest (node + jsdom), RTL, MSW, Playwright.
+paths:
+  - "src/**"
+  - "e2e/**"
+---
+
+# Testing
+
+Every behaviour change ships with a test at the layer that owns the behaviour. Pick the layer from this table; do not test the same thing twice at two layers.
+
+## Layers
+
+| Layer       | Files                          | Env / tool                                                   | Tests                                                            | Does not test                                                   |
+| ----------- | ------------------------------ | ------------------------------------------------------------ | ---------------------------------------------------------------- | --------------------------------------------------------------- |
+| Unit        | `src/**/*.test.ts`             | Vitest `node`, `runSaga`                                     | utils, parsers, slices, saga workers, HTTP client                | React rendering                                                 |
+| Component   | `src/**/*.test.tsx`            | Vitest `jsdom`, RTL, `user-event`, `makeTestStore` (no saga) | render for a given state; interactions dispatch the right action | saga side effects, network, snapshots                           |
+| Integration | `src/**/*.integration.test.ts` | Vitest `jsdom`, real `makeStore()`, MSW `server`             | a flow from action through saga and network to state and storage | request headers, retry, timeout (owned by `httpClient.test.ts`) |
+| E2E smoke   | `e2e/*.spec.ts`                | Playwright, production build + MSW worker, axe               | the few flows a user cannot live without; a11y violations        | every form and branch                                           |
+| Visual      | `e2e/visual/*.spec.ts`         | Playwright `toHaveScreenshot`, Linux container only          | nothing yet; config is ready                                     | anything with live or random data                               |
+
+`vitest.config.ts` maps the globs to the `unit` and `ui` projects. A `.test.tsx` file always runs in jsdom; a `.test.ts` file never does unless it is `*.integration.test.ts`.
+
+## Where a change needs a test
+
+- New or changed `utils/`, `slices/`, `services/` function: unit test next to the file.
+- New or changed saga: unit test with `runSaga` (see `src/shared/api/sagas/callApi.test.ts`), plus an integration test when the saga touches the network or storage.
+- New or changed component or hook: component test. Hooks that navigate are tested through a tiny component mounted in `<Routes>` so they unmount like the real page (see `src/features/auth/hooks/useLoginForm.test.tsx`).
+- New endpoint in `API_ENDPOINTS`: an MSW handler in `src/mocks/handlers/` and a row in the backend contract table in `README.md`. The handler is the executable contract; dev, integration and E2E all run against it.
+- New route or auth rule: one E2E smoke case only if an existing case cannot cover it.
+
+## Helpers to reuse
+
+All test infrastructure lives in `src/test/` and is imported as `@/test`. It is excluded from coverage and never imported by app code.
+
+- `renderWithProviders(ui, { preloadedState, route })`: real reducers, no sagas, `MemoryRouter`. Returns `store`, `actions` (everything dispatched) and `user` (`userEvent.setup()`).
+- `renderHookWithProviders(hook, { preloadedState, route })`: the same wrapper for `renderHook`.
+- `makeTestStore(preloadedState)`: the store behind both; each slice is merged over its initial state, so pass only the fields the test needs.
+- Factories in `src/test/factories/`: `buildUser`, `buildSession`, `buildStoredSession`, `buildAuthState`. Add a factory per domain type; never hand-write payloads in tests.
+- MSW: `server` from `@/test` (wrapping the handlers in `src/mocks/handlers/`) is started for the `ui` project with `onUnhandledFrame: 'error'`. Override a response in one test with `server.use(...)`; handlers reset after every test. Build handler URLs with `apiUrl(API_ENDPOINTS...)` from `@/mocks/handlers`.
+
+`src/test/TestProviders.tsx` is the one allowed exception to "no helpers in TSX": it is a provider component.
+
+## Writing component tests
+
+- Query the way a user finds things: `getByRole`, `getByLabelText`, `getByText`. No `getByTestId`, no `container.querySelector`, no class selectors. ESLint (`testing-library`, `jest-dom`, `vitest` plugins) enforces most of this.
+- Interact with `user` from `renderWithProviders`, not `fireEvent`.
+- Assert the action in `actions` (`expect(actions).toContainEqual(loginRequested(...))`) rather than mocking the hook.
+- No snapshot tests for components. They churn on every refactor and assert nothing a user sees.
+- Keep `vi.mock` for module boundaries only (`rootSaga.test.ts` mocks services to test wiring). Component tests should not need it.
+
+## Fixed environment
+
+- `VITE_API_URL=http://api.test` in every Vitest project; handlers build URLs with `buildUrl(API_BASE_URL, API_ENDPOINTS...)` so one handler matches in Node and in the browser.
+- `TZ=Asia/Ho_Chi_Minh` for all tests. Market-hours and date logic must not depend on the machine running the suite.
+- `localStorage` is cleared after each jsdom test by `src/test/setup.ts`.
+
+## Coverage
+
+`yarn test:coverage` enforces 70% lines and branches on `src/shared/**` and on `features/**/{sagas,slices,utils}/**`. Components have no numeric floor; their coverage is the behaviour tests above. Do not add `/* v8 ignore */` to meet a number.
+
+## E2E
+
+- Playwright runs against `yarn build:e2e` (Vite mode `e2e`, `VITE_API_MOCK=true`) served by `yarn preview:e2e`. The production build never contains MSW.
+- Log in with `MOCK_ACCOUNT` from `@/mocks/account`; never hard-code credentials in a spec. Specs run outside Vite, so that file is the only `src/` module they may import (it has no runtime imports).
+- Screenshot baselines are only valid from the Playwright Linux image used in CI. Do not commit baselines captured on macOS.

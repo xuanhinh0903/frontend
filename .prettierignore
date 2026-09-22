@@ -1,0 +1,15 @@
+node_modules
+**/node_modules
+dist
+dist-ssr
+coverage
+dist-e2e
+playwright-report
+test-results
+.code-review-graph
+*.local
+package-lock.json
+.claude/*
+!.claude/rules/
+.cursor
+skills-lock.json
