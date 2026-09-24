@@ -1,54 +1,68 @@
-<!-- code-review-graph MCP tools -->
+# msvn
 
-## MCP Tools: code-review-graph
+React 19 + TypeScript + Vite SPA, using React Router. Path alias `@` maps to `src/`.
 
-**This project has a knowledge graph. Start with the code-review-graph
-MCP tools to narrow scope, then read the source.** The graph is cheaper than scanning files and
-gives you structural context (callers, dependents, test coverage) that file search cannot.
+## Boot
 
-### When to use graph tools FIRST
+`src/main.tsx` mounts `App`. `App` wraps `AuthProvider`, then `RouterProvider`. The router is `createBrowserRouter(rootRoutes)` from `src/routes`.
 
-- **Exploring code**: `semantic_search_nodes_tool` or `query_graph_tool` instead of Grep
-- **Understanding impact**: `get_impact_radius_tool` instead of manually tracing imports
-- **Code review**: `detect_changes_tool` + `get_review_context_tool` instead of reading entire files
-- **Finding relationships**: `query_graph_tool` with callers_of/callees_of/imports_of/tests_for
-- **Architecture questions**: `get_architecture_overview_tool` + `list_communities_tool`
+## Directories
 
-### Verify in the source
+- `src/app/` — shell: `App`, the router, `AppLayout`, `PublicLayout`
+- `src/routes/` — composes layouts. `public.tsx` and `app.tsx` assemble feature routes
+- `src/features/<name>/` — `routes.tsx`, `pages/`, `components/`, `hooks/`, and a barrel `index.ts`
+- `src/shared/` — auth, `PATHS` / `ROUTE_SEGMENTS`, `lazyPage`, `resolveSafeRedirect`, `PageShell`, 404 and route-error pages, CSS tokens
 
-- Narrow scope with the graph, then read the source. Do not change code from graph output alone.
-- For any non-trivial change, read the implementation and the relevant tests before concluding.
-- Verify the exact source when touching behavior, database logic, migrations, retries, fallbacks,
-  recovery, or compatibility code.
-- When the graph and the source disagree, the source wins. The graph may be stale or may not
-  model that relationship.
-- An empty graph result can mean "not indexed" or "not statically visible", not "does not exist".
+## Routes
 
-### Key Tools
+| URL | Layout | Guard | Page |
+| --- | --- | --- | --- |
+| `/` | `AppLayout` | public | Home |
+| `/login` | `PublicLayout` | public | Login |
+| `/products` | `AppLayout` | `RequireAuth` | Product list |
+| `/products/:id` | `AppLayout` | `RequireAuth` | Product detail |
+| other | `AppLayout` | — | `NotFoundPage` |
+| render error | — | — | `RouteErrorPage` |
 
-| Tool                             | Use when                                               |
-| -------------------------------- | ------------------------------------------------------ |
-| `detect_changes_tool`            | Reviewing code changes — gives risk-scored analysis    |
-| `get_review_context_tool`        | Need source snippets for review — token-efficient      |
-| `get_impact_radius_tool`         | Understanding blast radius of a change                 |
-| `get_affected_flows_tool`        | Finding which execution paths are impacted             |
-| `query_graph_tool`               | Tracing callers, callees, imports, tests, dependencies |
-| `semantic_search_nodes_tool`     | Finding functions/classes by name or keyword           |
-| `get_architecture_overview_tool` | Understanding high-level codebase structure            |
-| `refactor_tool`                  | Planning renames, finding dead code                    |
+Feature pages load through `lazyPage`. `Suspense` sits in the layouts.
 
-### Workflow
+## Auth
 
-1. The graph auto-updates on file changes (via hooks).
-2. Use `detect_changes_tool` for code review.
-3. Use `get_affected_flows_tool` to understand impact.
-4. Use `query_graph_tool` pattern="tests_for" to check coverage.
+Client-only. `AuthProvider` stores `{ email }` in `localStorage` under `msvn.auth.user`. The login form collects a password but does not check or store it. `RequireAuth` sends anonymous users to `/login` and keeps the current location. After login, `resolveSafeRedirect` accepts only in-app paths that start with `/` and rejects `//`.
 
-<!-- /code-review-graph MCP tools -->
+## Data
 
-## Project conventions (TSX)
+Products are the mock list in `src/features/product/hooks/useProducts.ts`. `useProduct` returns `undefined` when the id does not match; the detail page then shows that the product was not found.
 
-See always-apply rule [`.cursor/rules/tsx-types-and-utils.mdc`](.cursor/rules/tsx-types-and-utils.mdc):
+## Adding a feature
 
-1. Type declarations in a `.tsx` totaling **> 5 lines** → extract to a dedicated types file and import.
-2. Never put helper functions in `.tsx`; put them under `utils/` (feature or `shared`). Before adding one, search the repo for a ~**≥ 70%** similar helper — if found, stop and ask whether to refactor for shared use.
+1. Add segments and paths in `src/shared/routes/paths.ts` (`ROUTE_SEGMENTS`, `PATHS`).
+2. Create `src/features/<name>/` with `routes.tsx` that lazy-loads pages via `lazyPage`, plus `pages/`, `components/`, `hooks/`, and an `index.ts` that exports the routes.
+3. Mount those routes in `src/routes/public.tsx` (public) or `src/routes/app.tsx` (wrap with `RequireAuth` when the area is private).
+
+## TSX conventions
+
+Hard rules for every `.tsx` change.
+
+### Types out of TSX when longer than 5 lines
+
+- Count pure TypeScript type blocks in the file (`type`, `interface`, complex unions and mapped types). Simple props of a few lines may stay inline.
+- If total type-declaration lines are greater than 5, move them to a dedicated types file and import them into the TSX.
+- Locations:
+  - One component or page: co-located `ComponentName.types.ts` (for example `LoginForm.types.ts`)
+  - Shared inside a feature: `features/<name>/types/` with an `index.ts` barrel
+  - Shared across the app: `shared/types/` with an `index.ts` barrel
+
+### No helper functions in TSX
+
+- Do not put support helpers (format, parse, map, validate, transform, and similar) in `.tsx` files.
+- UI event handlers that only wire props or hooks (`handleSubmit`) may stay in the component. Pure logic goes to utils.
+- Locations:
+  - Feature-only: `features/<name>/utils/` with an `index.ts` barrel
+  - Cross-feature: `shared/utils/` with an `index.ts` barrel
+
+Before adding a helper:
+
+1. Search the repo for a similar function.
+2. If an existing helper is roughly 70% or more the same purpose or behavior, stop and ask whether to refactor it into a shared util.
+3. Add a new helper only after that answer, or when no close match exists.
