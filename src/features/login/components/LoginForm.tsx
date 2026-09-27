@@ -1,22 +1,15 @@
-import type { FormEvent } from 'react'
-import { useLocation, useNavigate } from 'react-router'
-import { resolveSafeRedirect, useAuth, type LoginLocationState } from '@/shared'
 import { useLoginForm } from '../hooks'
 
 export function LoginForm() {
-  const { email, setEmail, password, setPassword, reset } = useLoginForm()
-  const { login } = useAuth()
-  const navigate = useNavigate()
-  const location = useLocation()
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    login(email)
-    const state = location.state as LoginLocationState | null
-    const redirectTo = resolveSafeRedirect(state?.from?.pathname)
-    reset()
-    navigate(redirectTo, { replace: true })
-  }
+  const {
+    email,
+    password,
+    error,
+    isSubmitting,
+    handleEmailChange,
+    handlePasswordChange,
+    handleSubmit,
+  } = useLoginForm()
 
   return (
     <form className="login-form" onSubmit={handleSubmit}>
@@ -26,7 +19,7 @@ export function LoginForm() {
           type="email"
           name="email"
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={handleEmailChange}
           required
           autoComplete="email"
         />
@@ -37,12 +30,19 @@ export function LoginForm() {
           type="password"
           name="password"
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          onChange={handlePasswordChange}
           required
           autoComplete="current-password"
         />
       </label>
-      <button type="submit">Sign in</button>
+      {error && (
+        <p className="login-form__error" role="alert">
+          {error}
+        </p>
+      )}
+      <button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? 'Signing in…' : 'Sign in'}
+      </button>
     </form>
   )
 }

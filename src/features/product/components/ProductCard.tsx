@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { PATHS } from '@/shared'
-import type { Product } from '../hooks'
+import type { Product } from '../types'
 
 type ProductCardProps = {
   product: Product

@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router'
 import { Suspense } from 'react'
-import { PATHS, useAuth } from '@/shared'
+import { PATHS } from '@/shared'
+import { useAuth } from '@/features/auth'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   isActive ? 'app-nav__link app-nav__link--active' : 'app-nav__link'

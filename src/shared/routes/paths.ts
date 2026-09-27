@@ -4,11 +4,15 @@ export const ROUTE_SEGMENTS = {
   productId: ':id',
 } as const
 
+function productDetailPath(id: string) {
+  return `/${ROUTE_SEGMENTS.products}/${id}`
+}
+
 export const PATHS = {
   home: '/',
   login: `/${ROUTE_SEGMENTS.login}`,
   products: {
     root: `/${ROUTE_SEGMENTS.products}`,
-    detail: (id: string) => `/${ROUTE_SEGMENTS.products}/${id}`,
+    detail: productDetailPath,
   },
 } as const

@@ -6,6 +6,8 @@
   --color-border: #e2e0e6;
   --color-accent: #1a5f4a;
   --color-accent-hover: #134737;
+  --color-positive: #1b7f4b;
+  --color-negative: #c0392b;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -26,5 +28,7 @@
     --color-border: #2e2b36;
     --color-accent: #3d9b7a;
     --color-accent-hover: #4db08c;
+    --color-positive: #4cc38a;
+    --color-negative: #f0776a;
   }
 }

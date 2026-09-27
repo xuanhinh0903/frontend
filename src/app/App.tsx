@@ -1,11 +1,11 @@
 import { RouterProvider } from 'react-router'
-import { AuthProvider } from '@/shared'
 import { router } from './router'
+import { AppProviders } from './providers'
 
 export function App() {
   return (
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    <AppProviders>
+        <RouterProvider router={router} />
+    </AppProviders>
   )
 }

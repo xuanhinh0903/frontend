@@ -1,5 +1,5 @@
 import type { RouteObject } from 'react-router'
-import { RequireAuth } from '@/shared'
+import { RequireAuth } from '@/features/auth'
 import { homeRoutes } from '@/features/home'
 import { productRoutes } from '@/features/product'
 
