@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { logoutRequested } from '@/features/auth/slices'
 import { symbolAdded, symbolRemoved, watchlistReducer } from './watchlistSlice'
 
 describe('watchlistReducer', () => {
@@ -9,5 +10,11 @@ describe('watchlistReducer', () => {
 
     expect(duplicated.symbols).toEqual(['VNM'])
     expect(removed.symbols).toEqual([])
+  })
+
+  it('clears symbols on logout', () => {
+    const added = watchlistReducer(undefined, symbolAdded('VNM'))
+
+    expect(watchlistReducer(added, logoutRequested()).symbols).toEqual([])
   })
 })

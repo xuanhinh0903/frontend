@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { logoutRequested } from '@/features/auth/slices'
 import {
   connectionChanged,
   marketReducer,
@@ -46,5 +47,19 @@ describe('marketReducer', () => {
     const subscribed = marketReducer(undefined, symbolSubscriptionRequested('VNM'))
 
     expect(marketReducer(subscribed, realtimeStopped()).subscriptions).toEqual({ VNM: 1 })
+  })
+
+  it('returns to the initial state on logout', () => {
+    const subscribed = marketReducer(undefined, symbolSubscriptionRequested('VNM'))
+    const quoted = marketReducer(
+      subscribed,
+      quoteUpdated({ symbol: 'VNM', price: 78.25, change: 0.25, timestamp: 1 }),
+    )
+
+    expect(marketReducer(quoted, logoutRequested())).toEqual({
+      connection: 'disconnected',
+      subscriptions: {},
+      quotes: {},
+    })
   })
 })

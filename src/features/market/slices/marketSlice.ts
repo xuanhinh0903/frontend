@@ -1,10 +1,15 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
+import { logoutRequested } from '@/features/auth/slices'
 import type { ConnectionStatus, MarketState, Quote } from '../types'
 
 const initialState: MarketState = {
   connection: 'disconnected',
   subscriptions: {},
   quotes: {},
+}
+
+function resetMarket(): MarketState {
+  return initialState
 }
 
 const marketSlice = createSlice({
@@ -31,6 +36,9 @@ const marketSlice = createSlice({
     quoteUpdated(state, action: PayloadAction<Quote>) {
       state.quotes[action.payload.symbol] = action.payload
     },
+  },
+  extraReducers(builder) {
+    builder.addCase(logoutRequested, resetMarket)
   },
 })
 

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ApiClientBindings } from '../types'
 import { httpBaseQuery } from './baseQuery'
-import { configureApiClient, httpClient } from './httpClient'
+import { configureApiClient, createHttpClient, httpClient } from './httpClient'
 
 const fetchMock = vi.fn<typeof fetch>()
 
@@ -62,6 +62,60 @@ describe('httpClient', () => {
     await expect(httpClient.delete('/products/1')).resolves.toBeUndefined()
   })
 
+  it('supports every method helper, query parameters and custom headers', async () => {
+    fetchMock.mockImplementation(async () => json({ ok: true }))
+
+    await httpClient.get('/products', {
+      query: { page: 2 },
+      headers: { 'X-Request-Id': 'request-1' },
+    })
+    await httpClient.put('/products/1', { name: 'B' })
+    await httpClient.patch('/products/1', { name: 'C' })
+    await httpClient.delete('/products/1')
+
+    expect(sentRequest(0).url).toBe('http://api.test/products?page=2')
+    expect(sentRequest(0).headers.get('X-Request-Id')).toBe('request-1')
+    expect(fetchMock.mock.calls.map(([, init]) => init?.method)).toEqual([
+      'GET',
+      'PUT',
+      'PATCH',
+      'DELETE',
+    ])
+  })
+
+  it.each([
+    ['string', 'plain text'],
+    ['FormData', new FormData()],
+    ['Blob', new Blob(['blob'])],
+    ['URLSearchParams', new URLSearchParams({ q: 'value' })],
+    ['ArrayBuffer', new ArrayBuffer(4)],
+  ])(
+    'passes a %s body through without JSON serialization',
+    async (_name, body) => {
+      fetchMock.mockResolvedValue(json({ ok: true }))
+
+      await httpClient.post('/upload', body)
+
+      expect(sentRequest().init.body).toBe(body)
+      expect(sentRequest().headers.has('Content-Type')).toBe(false)
+    },
+  )
+
+  it('preserves a manually provided Content-Type for JSON-compatible bodies', async () => {
+    fetchMock.mockResolvedValue(json({ ok: true }))
+
+    await httpClient.post(
+      '/products',
+      { name: 'A' },
+      { headers: { 'Content-Type': 'application/vnd.api+json' } },
+    )
+
+    expect(sentRequest().init.body).toBe('{"name":"A"}')
+    expect(sentRequest().headers.get('Content-Type')).toBe(
+      'application/vnd.api+json',
+    )
+  })
+
   it('attaches the bearer token unless auth is disabled', async () => {
     bindTokens()
     fetchMock.mockImplementation(async () => json({}))
@@ -71,6 +125,24 @@ describe('httpClient', () => {
 
     expect(sentRequest(0).headers.get('Authorization')).toBe('Bearer old')
     expect(sentRequest(1).headers.has('Authorization')).toBe(false)
+  })
+
+  it('creates an isolated client with explicit configuration', async () => {
+    fetchMock.mockResolvedValue(json({ ok: true }))
+    const client = createHttpClient({
+      baseUrl: 'https://isolated.test/api',
+      timeoutMs: 1_000,
+      auth: {
+        getAccessToken: () => 'isolated',
+        refreshAccessToken: async () => 'refreshed',
+        onSessionExpired: vi.fn(),
+      },
+    })
+
+    await client.get('/status')
+
+    expect(sentRequest().url).toBe('https://isolated.test/api/status')
+    expect(sentRequest().headers.get('Authorization')).toBe('Bearer isolated')
   })
 
   it('refreshes once on 401 and retries with the new token', async () => {
@@ -109,6 +181,19 @@ describe('httpClient', () => {
       reason: { status: 401, message: 'Session expired' },
     })
     expect(bindings.onSessionExpired).toHaveBeenCalledTimes(1)
+  })
+
+  it('retries an authenticated request at most once', async () => {
+    const bindings = bindTokens()
+    fetchMock.mockResolvedValue(json({ message: 'Still unauthorized' }, 401))
+
+    await expect(httpClient.get('/me')).rejects.toEqual({
+      status: 401,
+      message: 'Still unauthorized',
+    })
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(bindings.refreshAccessToken).toHaveBeenCalledTimes(1)
   })
 
   it('does not refresh anonymous requests', async () => {

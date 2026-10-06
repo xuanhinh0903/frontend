@@ -31,7 +31,7 @@ component ──dispatch──► slice ──► Saga ──callApi──► se
                                     shared/api httpClient (fetch, auth, refresh, errors)
 ```
 
-- **`shared/api/services/httpClient`** is the only place that calls `fetch`. It adds the base URL, JSON encoding, a timeout, and the bearer token. On a 401 it refreshes the token once (concurrent 401s share one refresh), retries, and signs the user out if the refresh fails. Every failure rejects with a serializable `ApiError { status, message, code?, details? }`.
+- **`shared/api/services/httpClient`** orchestrates requests and preserves the public method API. `requestBody` owns serialization, `transport` is the only place that calls `fetch` and composes timeout/cancellation, and `auth` owns access-token and shared-refresh coordination. On a 401 the client refreshes once, retries once, and signs the user out if refresh fails. Every failure rejects with a serializable `ApiError { status, message, code?, details? }`.
 - **`shared/api/services/baseApi`** is the one RTK Query slice (`reducerPath: 'api'`). It defines no endpoints; features add them with `baseApi.enhanceEndpoints({ addTagTypes }).injectEndpoints(...)`.
 - **`shared/api/sagas/callApi`** runs a service call from a saga and aborts the request when the saga is cancelled.
 - **`app/store/api/bindApiClient`** connects the client to the auth slice (token getter, refresh, logout). `shared/api` never imports the store or features.

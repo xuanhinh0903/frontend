@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Provider } from 'react-redux'
 import { PersistGate } from 'redux-persist/integration/react'
-import { persistor, store } from './Store'
+import { persistor, store } from './appStore'
 
 type AppProvidersProps = {
   children: ReactNode

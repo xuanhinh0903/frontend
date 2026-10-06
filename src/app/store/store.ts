@@ -6,7 +6,7 @@ import { bindApiClient } from './api'
 import { PERSIST_ACTIONS, persistedReducer } from './persist'
 import { rootSaga } from './sagas'
 
-export function Store() {
+export function makeStore() {
   const sagaMiddleware = createSagaMiddleware({
     onError: (error) => console.error('[saga]', error),
   })

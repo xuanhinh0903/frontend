@@ -1,3 +1,8 @@
 export { baseApi } from './baseApi'
 export { httpBaseQuery } from './baseQuery'
-export { configureApiClient, getAccessToken, httpClient } from './httpClient'
+export {
+  configureApiClient,
+  createHttpClient,
+  getAccessToken,
+  httpClient,
+} from './httpClient'
