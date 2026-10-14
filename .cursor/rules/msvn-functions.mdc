@@ -1,0 +1,9 @@
+---
+description: MSVN rule for functions assigned to objects and JSX props
+globs: src/**/*.ts,src/**/*.tsx
+alwaysApply: true
+---
+
+- Never write an inline function (arrow, `function` expression or method shorthand) as an object property value or a JSX prop. Declare it first, then assign it by name: `return { login }`, `onClick={handleRemove}`.
+- For each such function, decide: `useCallback` when a shared hook returns it, it goes to a `memo` child or context, or it is an effect/memo dependency or identity-sensitive listener; otherwise a plain `function handleX() {}`.
+- Full rule, exceptions (call-argument callbacks, createSlice/RTK Query/configureStore config, tests) and examples: `AGENTS.md` → "Functions in objects and props". `yarn lint` enforces the inline ban.

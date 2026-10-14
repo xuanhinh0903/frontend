@@ -1,3 +1,2 @@
-export { homeRoutes } from './home'
+export { demoRoutes } from './demo'
 export { loginRoutes } from './login'
-export { productRoutes } from './product'

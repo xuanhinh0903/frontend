@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router'
 import { Suspense } from 'react'
-import { PATHS, useAuth } from '@/shared'
+import { PATHS } from '@/shared'
+import { useAuth } from '@/features/auth'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   isActive ? 'app-nav__link app-nav__link--active' : 'app-nav__link'
@@ -12,11 +13,8 @@ export function AppLayout() {
     <div className="app-shell">
       <header className="app-header">
         <nav className="app-nav" aria-label="Main">
-          <NavLink to={PATHS.home} end className={navLinkClass}>
-            Home
-          </NavLink>
-          <NavLink to={PATHS.products.root} className={navLinkClass}>
-            Products
+          <NavLink to={PATHS.demo} className={navLinkClass}>
+            Demo
           </NavLink>
           {user ? (
             <span className="app-nav__session">
