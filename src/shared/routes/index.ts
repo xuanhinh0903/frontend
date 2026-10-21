@@ -1,3 +1,3 @@
-export { PATHS, ROUTE_SEGMENTS } from './paths'
-export { lazyPage } from './lazyPage'
-export { resolveSafeRedirect } from './safeRedirect'
+export { PATHS, ROUTE_SEGMENTS } from '@/shared/routes/paths'
+export { lazyPage } from '@/shared/routes/lazyPage'
+export { resolveSafeRedirect } from '@/shared/routes/safeRedirect'

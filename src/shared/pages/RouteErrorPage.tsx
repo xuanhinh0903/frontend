@@ -1,6 +1,6 @@
 import { isRouteErrorResponse, Link, useRouteError } from 'react-router'
-import { PageShell } from '../components'
-import { PATHS } from '../routes'
+import { PageShell } from '@/shared/components'
+import { PATHS } from '@/shared/routes'
 
 export function RouteErrorPage() {
   const error = useRouteError()

@@ -1,2 +1,2 @@
-export { AppLayout } from './AppLayout'
-export { PublicLayout } from './PublicLayout'
+export { AppLayout } from '@/app/layout/AppLayout'
+export { PublicLayout } from '@/app/layout/PublicLayout'

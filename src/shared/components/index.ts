@@ -1,1 +1,1 @@
-export { PageShell } from './PageShell'
+export { PageShell } from '@/shared/components/PageShell'

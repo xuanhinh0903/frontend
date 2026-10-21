@@ -1,31 +1,6 @@
 ---
-description: TSX must extract types >5 lines and keep helpers in utils; ask before duplicating similar helpers
+description: Project architecture and TSX conventions live in AGENTS.md
 alwaysApply: true
 ---
 
-# TSX types and utils
-
-Hard project conventions for every `.tsx` change. Do not skip.
-
-## 1. Types out of TSX when > 5 lines
-
-- Count pure TypeScript type blocks in the file (`type`, `interface`, complex unions/mapped types). Simple props of a few lines may stay inline.
-- If total type-declaration lines are **greater than 5**, move them to a dedicated types file and import into the TSX.
-- File locations:
-  - One component/page: co-located `ComponentName.types.ts` (e.g. `LoginForm.types.ts`)
-  - Shared inside a feature: `features/<name>/types/` with `index.ts` barrel
-  - Shared across the app: `shared/types/` with `index.ts` barrel
-
-## 2. No helper functions in TSX
-
-- Never put support/helpers (format, parse, map, validate, transform, etc.) in `.tsx` files.
-- UI event handlers that only wire props/hooks (`handleSubmit`) may stay in the component; pure logic goes to utils.
-- Utils locations:
-  - Feature-only: `features/<name>/utils/` with `index.ts` barrel
-  - Cross-feature: `shared/utils/` with `index.ts` barrel
-
-### Before adding any new helper
-
-1. Search the whole repo (code-review-graph and/or Grep / semantic search) for a similar function.
-2. If an existing helper is roughly **≥ 70%** the same purpose/behavior, **stop**. Ask the user whether to refactor it into a shared util for the whole app.
-3. Only add a new helper after the user answers, or when no close match exists.
+Follow AGENTS.md at the repository root. That file is the only source for architecture and TSX conventions.

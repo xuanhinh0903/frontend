@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
-import { PageShell } from '../components'
-import { PATHS } from '../routes'
+import { PageShell } from '@/shared/components'
+import { PATHS } from '@/shared/routes'
 
 export function NotFoundPage() {
   return (

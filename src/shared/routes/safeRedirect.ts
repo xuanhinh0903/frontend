@@ -1,4 +1,4 @@
-import { PATHS } from './paths'
+import { PATHS } from '@/shared/routes/paths'
 
 /** Allow only same-app absolute paths (block protocol-relative / open redirects). */
 export function resolveSafeRedirect(
